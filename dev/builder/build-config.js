@@ -47,7 +47,8 @@ var CKBUILDER_CONFIG = {
 		'node_modules',
 		'package.json',
 		'README.md',
-		'tests'
+		'tests',
+		'.gitmodules'
 	],
 	plugins : {
 		'about' : 1,
