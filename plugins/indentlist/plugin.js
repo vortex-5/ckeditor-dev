@@ -88,7 +88,7 @@
 						} : function( editor, path ) {
 							var list = this.getContext( path );
 
-							if ( !list || this.isIndent )
+							if ( !list || this.isIndent || isLowestIndent(path.block))
 								return TRISTATE_DISABLED;
 
 							return TRISTATE_OFF;
@@ -287,6 +287,11 @@
 	function neitherWhitespacesNorBookmark( node ) {
 		return isNotWhitespaces( node ) && isNotBookmark( node );
 	}
+	
+	function isLowestIndent( node ) {
+      var grandParentNode = node.getParent().getParent();
+      return !listItem (grandParentNode);
+    }
 
 	/**
 	 * Global namespace for methods exposed by the Indent List plugin.
