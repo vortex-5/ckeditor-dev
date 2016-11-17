@@ -326,10 +326,11 @@ CKEDITOR.plugins.add( 'colorbutton', {
  * @cfg {String} [colorButton_colors=see source]
  * @member CKEDITOR.config
  */
-CKEDITOR.config.colorButton_colors = '1ABC9C !important,2ECC71 !important,3498DB !important,9B59B6 !important,4E5F70 !important,F1C40F !important,' +
-	'16A085 !important,27AE60 !important,2980B9 !important,8E44AD !important,2C3E50 !important,F39C12 !important,' +
-	'E67E22 !important,E74C3C !important,ECF0F1 !important,95A5A6 !important,DDD !important,FFF !important,' +
-	'D35400 !important,C0392B !important,BDC3C7 !important,7F8C8D !important,999 !important,000 !important';
+CKEDITOR.config.colorButton_colors = '000,800000,8B4513,2F4F4F,008080,000080,4B0082,696969,' +
+	'B22222,A52A2A,DAA520,006400,40E0D0,0000CD,800080,808080,' +
+	'F00,FF8C00,FFD700,008000,0FF,00F,EE82EE,A9A9A9,' +
+	'FFA07A,FFA500,FFFF00,00FF00,AFEEEE,ADD8E6,DDA0DD,D3D3D3,' +
+	'FFF0F5,FAEBD7,FFFFE0,F0FFF0,F0FFFF,F0F8FF,E6E6FA,FFF';
 
 /**
  * Stores the style definition that applies the text foreground color.
@@ -348,7 +349,7 @@ CKEDITOR.config.colorButton_colors = '1ABC9C !important,2ECC71 !important,3498DB
  */
 CKEDITOR.config.colorButton_foreStyle = {
 	element: 'span',
-	styles: { 'color': '#(color)' },
+	styles: { 'color': '#(color) !important' },
 	overrides: [ {
 		element: 'font', attributes: { 'color': null }
 	} ]
@@ -371,7 +372,7 @@ CKEDITOR.config.colorButton_foreStyle = {
  */
 CKEDITOR.config.colorButton_backStyle = {
 	element: 'span',
-	styles: { 'background-color': '#(color)' }
+	styles: { 'background-color': '#(color) !important' }
 };
 
 /**
