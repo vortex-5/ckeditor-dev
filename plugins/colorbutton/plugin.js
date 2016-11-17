@@ -349,7 +349,7 @@ CKEDITOR.config.colorButton_colors = '000,800000,8B4513,2F4F4F,008080,000080,4B0
  */
 CKEDITOR.config.colorButton_foreStyle = {
 	element: 'span',
-	styles: { 'color': '#(color) !important' },
+	styles: { 'color': '#(color)' },
 	overrides: [ {
 		element: 'font', attributes: { 'color': null }
 	} ]
@@ -372,7 +372,7 @@ CKEDITOR.config.colorButton_foreStyle = {
  */
 CKEDITOR.config.colorButton_backStyle = {
 	element: 'span',
-	styles: { 'background-color': '#(color) !important' }
+	styles: { 'background-color': '#(color)' }
 };
 
 /**
