@@ -12,10 +12,17 @@
 	var htmlMatchingOpts = {
 			fixStyles: true
 		},
-		ffArial = 'font-family:arial,helvetica,sans-serif',
-		ffCS = 'font-family:comic sans ms,cursive';
+		ffArial = 'font-family:Arial,Helvetica,sans-serif',
+		ffCS = 'font-family:Comic Sans MS,cursive';
 
 	bender.test( {
+		_should: {
+			ignore: {
+				'test apply font size over another font size (collapsed selection in empty span)':
+				CKEDITOR.env.webkit && !CKEDITOR.env.chrome
+			}
+		},
+
 		'test apply font size (collapsed selection)': function() {
 			var bot = this.editorBot,
 				editor = this.editor;

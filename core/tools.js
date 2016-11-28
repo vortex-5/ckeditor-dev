@@ -981,6 +981,23 @@
 		},
 
 		/**
+		 * Normalizes hexadecimal notation so that the color string is always 6 characters long and lowercase.
+		 *
+		 * @param {String} styleText The style data (or just a string containing hex colors) to be converted.
+		 * @returns {String} The style data with hex colors normalized.
+		 */
+		normalizeHex: function( styleText ) {
+			return styleText.replace( /#(([0-9a-f]{3}){1,2})($|;|\s+)/gi, function( match, hexColor, hexColorPart, separator ) {
+				var normalizedHexColor = hexColor.toLowerCase();
+				if ( normalizedHexColor.length == 3 ) {
+					var parts = normalizedHexColor.split( '' );
+					normalizedHexColor = [ parts[ 0 ], parts[ 0 ], parts[ 1 ], parts[ 1 ], parts[ 2 ], parts[ 2 ] ].join( '' );
+				}
+				return '#' + normalizedHexColor + separator;
+			} );
+		},
+
+		/**
 		 * Turns inline style text properties into one hash.
 		 *
 		 * @param {String} styleText The style data to be parsed.
@@ -996,8 +1013,12 @@
 				// Injects the style in a temporary span object, so the browser parses it,
 				// retrieving its final format.
 				var temp = new CKEDITOR.dom.element( 'span' );
-				temp.setAttribute( 'style', styleText );
-				styleText = CKEDITOR.tools.convertRgbToHex( temp.getAttribute( 'style' ) || '' );
+				styleText = temp.setAttribute( 'style', styleText ).getAttribute( 'style' ) || '';
+			}
+
+			// Normalize colors.
+			if ( styleText ) {
+				styleText = CKEDITOR.tools.normalizeHex( CKEDITOR.tools.convertRgbToHex( styleText ) );
 			}
 
 			// IE will leave a single semicolon when failed to parse the style text. (#3891)
@@ -1007,10 +1028,9 @@
 			styleText.replace( /&quot;/g, '"' ).replace( /\s*([^:;\s]+)\s*:\s*([^;]+)\s*(?=;|$)/g, function( match, name, value ) {
 				if ( normalize ) {
 					name = name.toLowerCase();
-					// Normalize font-family property, ignore quotes and being case insensitive. (#7322)
-					// http://www.w3.org/TR/css3-fonts/#font-family-the-font-family-property
+					// Drop extra whitespacing from font-family.
 					if ( name == 'font-family' )
-						value = value.toLowerCase().replace( /["']/g, '' ).replace( /\s*,\s*/g, ',' );
+						value = value.replace( /\s*,\s*/g, ',' );
 					value = CKEDITOR.tools.trim( value );
 				}
 
@@ -1293,6 +1313,67 @@
 		},
 
 		/**
+		 * Converts a keystroke to its string representation. Returns an object with two fields:
+		 *
+		 * * `display` &ndash; A string that should be used for visible labels.
+		 * For Mac devices it uses `⌥` for `ALT`, `⇧` for `SHIFT` and `⌘` for `COMMAND`.
+		 * * `aria` &ndash; A string that should be used for ARIA descriptions.
+		 * It does not use special characters such as `⌥`, `⇧` or `⌘`.
+		 *
+		 * 		var lang = editor.lang.common.keyboard;
+		 * 		var shortcut = CKEDITOR.tools.keystrokeToString( lang, CKEDITOR.CTRL + 88 );
+		 * 		console.log( shortcut.display ); // 'CTRL + X', on Mac '⌘ + X'.
+		 * 		console.log( shortcut.aria ); // 'CTRL + X', on Mac 'COMMAND + X'.
+		 *
+		 * @since 4.6.0
+		 * @param {Object} lang A language object with the key name translation.
+		 * @param {Number} keystroke The keystroke to convert.
+		 * @returns {{display: String, aria: String}}
+		 */
+		keystrokeToString: function( lang, keystroke ) {
+			var special = keystroke & 0xFF0000,
+				key = keystroke & 0x00FFFF,
+				isMac = CKEDITOR.env.mac,
+				CTRL = 17,
+				CMD = 224,
+				ALT = 18,
+				SHIFT = 16,
+				display = [],
+				aria = [];
+
+
+			if ( special & CKEDITOR.CTRL ) {
+				display.push( isMac ? '⌘' : lang[ CTRL ] );
+				aria.push( isMac ? lang[ CMD ] : lang[ CTRL ] );
+			}
+
+			if ( special & CKEDITOR.ALT ) {
+				display.push( isMac ? '⌥' : lang[ ALT ] );
+				aria.push( lang[ ALT ] );
+			}
+
+			if ( special & CKEDITOR.SHIFT ) {
+				display.push( isMac ? '⇧' : lang[ SHIFT ] );
+				aria.push( lang[ SHIFT ] );
+			}
+
+			if ( key ) {
+				if ( lang[ key ] ) {
+					display.push( lang[ key ] );
+					aria.push( lang[ key ] );
+				} else {
+					display.push( String.fromCharCode( key ) );
+					aria.push( String.fromCharCode( key ) );
+				}
+			}
+
+			return {
+				display: display.join( '+' ),
+				aria: aria.join( '+' )
+			};
+		},
+
+		/**
 		 * The data URI of a transparent image. May be used e.g. in HTML as an image source or in CSS in `url()`.
 		 *
 		 * @since 4.4
@@ -1353,6 +1434,32 @@
 			}
 
 			return token;
+		},
+
+		/**
+		 * Returns an escaped CSS selector. `CSS.escape()` is used if defined, leading digit is escaped otherwise.
+		 *
+		 * @since 4.5.10
+		 * @param {String} selector A CSS selector to escape.
+		 * @returns {String} An escaped selector.
+		 */
+		escapeCss: function( selector ) {
+			// Invalid input.
+			if ( !selector ) {
+				return '';
+			}
+
+			// CSS.escape() can be used.
+			if ( window.CSS && CSS.escape ) {
+				return CSS.escape( selector );
+			}
+
+			// Simple leading digit escape.
+			if ( !isNaN( parseInt( selector.charAt( 0 ), 10 ) ) ) {
+				return '\\3' + selector.charAt( 0 ) + ' ' + selector.substring( 1, selector.length );
+			}
+
+			return selector;
 		}
 	};
 

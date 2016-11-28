@@ -52,7 +52,7 @@
 				required = 'a[href]';
 
 			if ( CKEDITOR.dialog.isTabEnabled( editor, 'link', 'advanced' ) )
-				allowed = allowed.replace( ']', ',accesskey,charset,dir,id,lang,name,rel,tabindex,title,type]{*}(*)' );
+				allowed = allowed.replace( ']', ',accesskey,charset,dir,id,lang,name,rel,tabindex,title,type,download]{*}(*)' );
 			if ( CKEDITOR.dialog.isTabEnabled( editor, 'link', 'target' ) )
 				allowed = allowed.replace( ']', ',target,onclick]' );
 
@@ -527,6 +527,11 @@
 					};
 				}
 
+				var download = element.getAttribute( 'download' );
+				if ( download !== null ) {
+					retval.download = true;
+				}
+
 				var advanced = {};
 
 				for ( var a in advAttrNames ) {
@@ -666,6 +671,11 @@
 				}
 			}
 
+			// Force download attribute.
+			if ( data.download ) {
+				set.download = '';
+			}
+
 			// Advanced attributes.
 			if ( data.advanced ) {
 				for ( var a in advAttrNames ) {
@@ -687,7 +697,8 @@
 				target: 1,
 				onclick: 1,
 				'data-cke-pa-onclick': 1,
-				'data-cke-saved-name': 1
+				'data-cke-saved-name': 1,
+				'download': 1
 			};
 
 			if ( data.advanced )
@@ -701,6 +712,36 @@
 				set: set,
 				removed: CKEDITOR.tools.objectKeys( removed )
 			};
+		},
+
+		
+		/**
+		 * Determines whether an element should have a "Display Text" field in the Link dialog.
+		 *
+		 * @since 4.5.11 
+		 * @param {CKEDITOR.dom.element/null} element Selected element, `null` if none selected or if a ranged selection
+		 * is made.
+		 * @param {CKEDITOR.editor} editor The editor instance for which the check is performed.
+		 * @returns {Boolean}
+		 */
+		showDisplayTextForElement: function( element, editor ) {
+			var undesiredElements = {
+				img: 1,
+				table: 1,
+				tbody: 1,
+				thead: 1,
+				tfoot: 1,
+				input: 1,
+				select: 1,
+				textarea: 1
+			};
+
+			// Widget duck typing, we don't want to show display text for widgets.
+			if ( editor.widgets && editor.widgets.focused ) {
+				return false;
+			}
+
+			return !element || !element.getName || !element.is( undesiredElements );
 		}
 	};
 
