@@ -2500,7 +2500,7 @@ CKEDITOR.dom.range = function( root ) {
 			}
 
 			// Handle non-editable element e.g. HR.
-			if ( el.type == CKEDITOR.NODE_ELEMENT && !el.isEditable( false ) ) {
+			if ( el && el.type == CKEDITOR.NODE_ELEMENT && !el.isEditable( false ) ) {
 				this.moveToPosition( el, isMoveToEnd ? CKEDITOR.POSITION_AFTER_END : CKEDITOR.POSITION_BEFORE_START );
 				return true;
 			}
