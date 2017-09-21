@@ -71,6 +71,7 @@ var CKBUILDER_CONFIG = {
 		'pagebreak' : 1,
 		'quicktable' : 1,
 		'removeformat' : 1,
+		'richcombo' : 1,
 		'sharedspace' : 1,
 		'specialchar' : 1,
 		'stylescombo' : 1,
