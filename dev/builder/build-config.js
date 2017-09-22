@@ -68,6 +68,7 @@ var CKBUILDER_CONFIG = {
 		'link' : 1,
 		'list' : 1,
 		'liststyle' : 1,
+		'menubutton' : 1,
 		'pagebreak' : 1,
 		'quicktable' : 1,
 		'removeformat' : 1,
