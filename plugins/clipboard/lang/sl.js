@@ -1,6 +1,6 @@
 /*
 Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'clipboard', 'sl', {
 	copy: 'Kopiraj',
@@ -8,8 +8,5 @@ CKEDITOR.plugins.setLang( 'clipboard', 'sl', {
 	cut: 'Izreži',
 	cutError: 'Varnostne nastavitve brskalnika ne dopuščajo samodejnega izrezovanja. Uporabite kombinacijo tipk na tipkovnici (Ctrl/Cmd+X).',
 	paste: 'Prilepi',
-	pasteArea: 'Prilepi območje',
-	pasteMsg: 'Prosimo, prilepite v sleči okvir s pomočjo tipkovnice (<strong>Ctrl/Cmd+V</strong>) in pritisnite V redu.',
-	securityMsg: 'Zaradi varnostnih nastavitev vašega brskalnika urejevalnik ne more neposredno dostopati do odložišča. Vsebino odložišča ponovno prilepite v to okno.',
-	title: 'Prilepi'
+	pasteNotification: 'Your browser doesn\'t allow you to paste this way. Press %1 to paste.' // MISSING
 } );

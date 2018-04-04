@@ -1,6 +1,6 @@
 /**
  * @license Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 /**
@@ -62,7 +62,7 @@ CKEDITOR.lang[ 'ja' ] = {
 		resize: 'ドラッグしてリサイズ',
 		generalTab: '全般',
 		advancedTab: '高度な設定',
-		validateNumberFailed: '値が数ではありません',
+		validateNumberFailed: '値が数値ではありません',
 		confirmNewPage: '変更内容を保存せず、 新しいページを開いてもよろしいでしょうか？',
 		confirmCancel: 'オプション設定を変更しました。ダイアログを閉じてもよろしいでしょうか？',
 		options: 'オプション',
@@ -112,6 +112,8 @@ CKEDITOR.lang[ 'ja' ] = {
 		},
 
 		// Prepended to ARIA labels with shortcuts.
-		keyboardShortcut: 'キーボードショートカット'
+		keyboardShortcut: 'キーボードショートカット',
+
+		optionDefault: 'Default' // MISSING
 	}
 };

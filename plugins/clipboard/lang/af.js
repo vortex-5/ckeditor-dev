@@ -1,6 +1,6 @@
 /*
 Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
-For licensing, see LICENSE.md or http://ckeditor.com/license
+For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'clipboard', 'af', {
 	copy: 'Kopiëer',
@@ -8,8 +8,5 @@ CKEDITOR.plugins.setLang( 'clipboard', 'af', {
 	cut: 'Knip',
 	cutError: 'U blaaier se sekuriteitsinstelling belet die outomatiese knip-aksie. Gebruik die sleutelbordkombinasie (Ctrl/Cmd+X).',
 	paste: 'Plak',
-	pasteArea: 'Plak-area',
-	pasteMsg: 'Plak die teks in die volgende teks-area met die sleutelbordkombinasie (<STRONG>Ctrl/Cmd+V</STRONG>) en druk <STRONG>OK</STRONG>.',
-	securityMsg: 'Weens u blaaier se sekuriteitsinstelling is data op die knipbord nie toeganklik nie. U kan dit eers weer in hierdie venster plak.',
-	title: 'Byvoeg'
+	pasteNotification: 'Your browser doesn\'t allow you to paste this way. Press %1 to paste.' // MISSING
 } );

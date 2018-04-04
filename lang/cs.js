@@ -1,6 +1,6 @@
 /**
  * @license Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
- * For licensing, see LICENSE.md or http://ckeditor.com/license
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 /**
@@ -104,14 +104,16 @@ CKEDITOR.lang[ 'cs' ] = {
 			16: 'Shift',
 			17: 'Ctrl',
 			18: 'Alt',
-			32: 'Space', // MISSING
+			32: 'Mezerník',
 			35: 'Konec',
 			36: 'Domů',
 			46: 'Smazat',
-			224: 'Command' // MISSING
+			224: 'Command'
 		},
 
 		// Prepended to ARIA labels with shortcuts.
-		keyboardShortcut: 'Keyboard shortcut' // MISSING
+		keyboardShortcut: 'Klávesová zkratka',
+
+		optionDefault: 'Default' // MISSING
 	}
 };
