@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2017, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2018, CKSource - Frederico Knabben. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -1877,17 +1877,14 @@
 				 */
 				border: function( value ) {
 					var ret = {},
-						input = value.split( /\s+/ );
+						input = value.split( /\s+/g ),
+						parseColor = CKEDITOR.tools.style.parse._findColor( value );
+
+					if ( parseColor.length ) {
+						ret.color = parseColor[ 0 ];
+					}
 
 					CKEDITOR.tools.array.forEach( input, function( val ) {
-						if ( !ret.color ) {
-							var parseColor = CKEDITOR.tools.style.parse._findColor( val );
-							if ( parseColor.length ) {
-								ret.color = parseColor[ 0 ];
-								return;
-							}
-						}
-
 						if ( !ret.style ) {
 							if ( CKEDITOR.tools.indexOf( CKEDITOR.tools.style.parse._borderStyle, val ) !== -1 ) {
 								ret.style = val;
