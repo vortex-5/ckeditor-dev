@@ -84,6 +84,9 @@ var CKBUILDER_CONFIG = {
 		'undo' : 1
 	},
 	languages : {
-		'en' : 1
+		'en' : 1,
+		'de': 1,
+		'fr': 1,
+		'nl': 1
 	}
 };
