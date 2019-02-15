@@ -59,6 +59,7 @@ var CKBUILDER_CONFIG = {
 		'clipboard' : 1,
 		'colorbutton' : 1,
 		'divarea' : 1,
+		'enterkey': 1,
 		'entities' : 1,
 		'floatingspace' : 1,
 		'font' : 1,
