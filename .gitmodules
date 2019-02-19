@@ -1,6 +1,3 @@
-[submodule "skins/minimalist"]
-	path = skins/minimalist
-	url = git@github.com:vortex-5/ckeditor-skin-minimalist.git
 [submodule "plugins/base64image"]
 	path = plugins/base64image
 	url = git@github.com:vortex-5/base64image.git
