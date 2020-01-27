@@ -92,6 +92,7 @@ var CKBUILDER_CONFIG = {
 		'de': 1,
 		'fo': 1,
 		'fr': 1,
+		'hr': 1,
 		'nl': 1
 	}
 };
