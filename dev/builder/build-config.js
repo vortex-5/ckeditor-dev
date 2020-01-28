@@ -84,15 +84,5 @@ var CKBUILDER_CONFIG = {
 		'tableresize' : 1,
 		'toolbar' : 1,
 		'undo' : 1
-	},
-	languages : {
-		'ar': 1,
-		'en' : 1,
-		'es': 1,
-		'da': 1,
-		'de': 1,
-		'fo': 1,
-		'fr': 1,
-		'nl': 1
 	}
 };
