@@ -2455,8 +2455,8 @@
 		 */
 		scrollIntoView: function() {
 			// Scrolls the first range into view.
-			if ( this.type != CKEDITOR.SELECTION_NONE )
-				this.getRanges()[ 0 ].scrollIntoView();
+			if ( this.type != CKEDITOR.SELECTION_NONE && this.getRanges()[0] )
+				this.getRanges()[0].scrollIntoView();
 		},
 
 		/**
