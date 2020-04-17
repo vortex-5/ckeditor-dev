@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -11,6 +11,9 @@
 		requires: 'textwatcher',
 		onLoad: function() {
 			CKEDITOR.document.appendStyleSheet( this.path + 'skins/default.css' );
+		},
+		isSupportedEnvironment: function() {
+			return !CKEDITOR.env.ie || CKEDITOR.env.version > 8;
 		}
 	} );
 
@@ -239,6 +242,10 @@
 				this.attach();
 			}, this );
 		}
+
+		editor.on( 'destroy', function() {
+			this.destroy();
+		}, this );
 	}
 
 	Autocomplete.prototype = {
@@ -272,6 +279,8 @@
 			this._listeners.push( this.view.on( 'click-item', this.onItemClick, this ) );
 
 			// Update view position on viewport change.
+			// Note: CKEditor's event system has a limitation that one function
+			// cannot be used as listener for the same event more than once. Hence, wrapper functions.
 			this._listeners.push( win.on( 'scroll', function() {
 				this.viewRepositionListener();
 			}, this ) );
@@ -280,11 +289,6 @@
 			}, this ) );
 
 			this._listeners.push( editor.on( 'contentDom', onContentDom, this ) );
-			// CKEditor's event system has a limitation that one function (in this case this.check)
-			// cannot be used as listener for the same event more than once. Hence, wrapper function.
-			this._listeners.push( editor.on( 'change', function() {
-				this.viewRepositionListener();
-			}, this ) );
 
 			// Don't let browser to focus dropdown element (#2107).
 			this._listeners.push( this.view.element.on( 'mousedown', function( e ) {
@@ -359,7 +363,7 @@
 
 			this._listeners = [];
 
-			this.view.element.remove();
+			this.view.element && this.view.element.remove();
 		},
 
 		/**
@@ -432,7 +436,7 @@
 		// LISTENERS ------------------
 
 		/**
-		 * The function that should be called once the content has changed.
+		 * The function that should be called when the view has to be repositioned, e.g on scroll.
 		 *
 		 * @private
 		 */
@@ -763,7 +767,7 @@
 			}
 
 			// Consider that offset host might be repositioned on its own.
-			// Similar to #1048. See https://github.com/ckeditor/ckeditor-dev/pull/1732#discussion_r182790235.
+			// Similar to #1048. See https://github.com/ckeditor/ckeditor4/pull/1732#discussion_r182790235.
 			var hostElement = CKEDITOR.document.getBody();
 			if ( hostElement.getComputedStyle( 'position' ) === 'static' ) {
 				hostElement = hostElement.getParent();
@@ -1338,7 +1342,7 @@
 	}
 
 	function encodeItem( item ) {
-		return CKEDITOR.tools.array.reduce( CKEDITOR.tools.objectKeys( item ), function( cur, key ) {
+		return CKEDITOR.tools.array.reduce( CKEDITOR.tools.object.keys( item ), function( cur, key ) {
 			cur[ key ] = CKEDITOR.tools.htmlEncode( item[ key ] );
 			return cur;
 		}, {} );

@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -242,7 +242,9 @@
 								return acc + itemTemplate.output( {
 									group: htmlEncode( item.name ),
 									name: htmlEncode( item.sectionName ),
-									svgId: htmlEncode( item.svgId )
+									svgId: htmlEncode( item.svgId ),
+									translateX: item.translate && item.translate.x ? htmlEncode( item.translate.x ) : 0,
+									translateY: item.translate && item.translate.y ? htmlEncode( item.translate.y ) : 0
 								} );
 							}
 						}, '' );
@@ -264,7 +266,7 @@
 								}
 							} );
 
-							this.clearSearchAndMoveFocus( event );
+							this.clearSearchAndMoveFocus( activeElement );
 
 							event.data.preventDefault();
 						}
@@ -377,10 +379,11 @@
 					return arrTools.reduce(
 						items,
 						function( acc, item ) {
+							addEncodedName( item );
 							return acc + emojiTpl.output( {
 									symbol: htmlEncode( item.symbol ),
 									id: htmlEncode( item.id ),
-									name: htmlEncode( item.id.replace( /::.*$/, ':' ).replace( /^:|:$/g, '' ).replace( /_/g, ' ' ) ),
+									name: item.name,
 									group: htmlEncode( item.group ),
 									keywords: htmlEncode( ( item.keywords || [] ).join( ',' ) )
 								} );
@@ -505,13 +508,9 @@
 					this.elements.statusDescription.setText( '' );
 					this.elements.statusName.setText( '' );
 				},
-				clearSearchAndMoveFocus: function( event ) {
-					var element = event.data.getTarget().getAscendant( 'li', true );
-					if ( !element ) {
-						return;
-					}
+				clearSearchAndMoveFocus: function( activeElement ) {
 					this.clearSearchInput();
-					this.moveFocus( element.data( 'cke-emoji-group' ) );
+					this.moveFocus( activeElement.data( 'cke-emoji-group' ) );
 				},
 				moveFocus: function( groupName ) {
 					var firstSectionItem = this.blockElement.findOne( 'a[data-cke-emoji-group="' + htmlEncode( groupName ) + '"]' ),
@@ -551,8 +550,12 @@
 		icons: 'emojipanel',
 		hidpi: true,
 
+		isSupportedEnvironment: function() {
+			return !CKEDITOR.env.ie || CKEDITOR.env.version >= 11;
+		},
+
 		beforeInit: function() {
-			if ( CKEDITOR.env.ie && CKEDITOR.env.version < 11 ) {
+			if ( !this.isSupportedEnvironment() ) {
 				return;
 			}
 			if ( !stylesLoaded ) {
@@ -562,7 +565,7 @@
 		},
 
 		init: function( editor ) {
-			if ( CKEDITOR.env.ie && CKEDITOR.env.version < 11 ) {
+			if ( !this.isSupportedEnvironment() ) {
 				return;
 			}
 
@@ -597,7 +600,7 @@
 					editor._.emoji.autocomplete = new CKEDITOR.plugins.autocomplete( editor, {
 						textTestCallback: getTextTestCallback(),
 						dataCallback: dataCallback,
-						itemTemplate: '<li data-id="{id}" class="cke_emoji-suggestion_item">{symbol} {id}</li>',
+						itemTemplate: '<li data-id="{id}" class="cke_emoji-suggestion_item"><span>{symbol}</span> {name}</li>',
 						outputTemplate: '{symbol}'
 					} );
 				}
@@ -627,9 +630,19 @@
 				function dataCallback( matchInfo, callback ) {
 					var emojiName = matchInfo.query.substr( 1 ).toLowerCase(),
 						data = arrTools.filter( emojiList, function( item ) {
-							// Comparing lowercased strings, because emoji should be case insensitive (#2167).
+							// Comparing lowercase strings, because emoji should be case insensitive (#2167).
 							return item.id.toLowerCase().indexOf( emojiName ) !== -1;
+						} ).sort( function( a, b ) {
+							var aStartsWithEmojiName = !a.id.substr( 1 ).indexOf( emojiName ),
+								bStartsWithEmojiName = !b.id.substr( 1 ).indexOf( emojiName );
+
+							if ( aStartsWithEmojiName != bStartsWithEmojiName ) {
+								return aStartsWithEmojiName ? -1 : 1;
+							} else {
+								return a.id > b.id ? 1 : -1;
+							}
 						} );
+					data = arrTools.map( data, addEncodedName );
 					callback( data );
 				}
 			} );
@@ -646,6 +659,13 @@
 
 		}
 	} );
+
+	function addEncodedName( item ) {
+		if ( !item.name ) {
+			item.name = htmlEncode( item.id.replace( /::.*$/, ':' ).replace( /^:|:$/g, '' ) );
+		}
+		return item;
+	}
 } )();
 
 /**

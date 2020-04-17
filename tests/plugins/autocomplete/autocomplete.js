@@ -33,9 +33,7 @@
 	bender.test( {
 
 		setUp: function() {
-			if ( CKEDITOR.env.ie && CKEDITOR.env.version < 9 ) {
-				assert.ignore();
-			}
+			bender.tools.ignoreUnsupportedEnvironment( 'autocomplete' );
 		},
 
 		'test API exists': function() {
@@ -559,10 +557,45 @@
 					bender.tools.setHtmlWithSelection( editor, '' );
 					editor.editable().fire( 'keyup', new CKEDITOR.dom.event( {} ) );
 					assertViewOpened( ac, true );
+					ac.destroy();
 				} );
 			} );
 
 			wait();
+		},
+
+		// (#589)
+		'test autocomplete is destroyed with editor': function() {
+			var editor = CKEDITOR.replace( 'destroy' ),
+				ac = new CKEDITOR.plugins.autocomplete( editor, configDefinition ),
+				spy = sinon.spy( ac, 'destroy' );
+
+			editor.on( 'destroy', function() {
+				setTimeout( function() {
+					resume( function() {
+						assert.isTrue( spy.called );
+					} );
+				} );
+			} );
+
+			editor.destroy();
+
+			wait();
+		},
+
+		// (#2474)
+		'test editor change event': function() {
+			var editor = this.editors.standard,
+				ac = new CKEDITOR.plugins.autocomplete( editor, configDefinition ),
+				spy = sinon.spy( ac.view, 'updatePosition' );
+
+			ac.model.setActive( true );
+
+			editor.fire( 'change' );
+
+			ac.destroy();
+
+			assert.isFalse( spy.called );
 		}
 	} );
 

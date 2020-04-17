@@ -64,9 +64,7 @@
 
 	var tests = {
 		setUp: function() {
-			if ( emojiTools.notSupportedEnvironment ) {
-				assert.ignore();
-			}
+			bender.tools.ignoreUnsupportedEnvironment( 'emoji' );
 
 			// Fallback in case where ajax couldn't load before tests.
 			var data = JSON.stringify( [
@@ -96,6 +94,21 @@
 					autocomplete.close();
 				}
 			}
+		},
+
+		// This test should be on top of test suite, cause other tests will cache emojis (#2583).
+		'test emoji names cache': function( editor, bot ) {
+			bot.setHtmlWithSelection( '<p>foo :collision:^</p>' );
+
+			var collision = CKEDITOR.tools.array.filter( editor._.emoji.list, function( item ) {
+				return item.id === ':collision:';
+			} )[ 0 ];
+
+			assert.isUndefined( collision.name, 'Emoji name should be undefined.' );
+
+			editor.editable().fire( 'keyup', new CKEDITOR.dom.event( {} ) );
+
+			assert.areEqual( 'collision', collision.name, 'Emoji name should be cached.' );
 		},
 
 		'test emoji objects are added to editor': function( editor ) {
@@ -183,11 +196,54 @@
 				assert.areSame( 1, autocomplete.model.data.length, 'Emoji result contains more than one result' );
 				objectAssert.areEqual( { id: ':collision:', symbol: '💥' }, { id: autocomplete.model.data[ 0 ].id, symbol: autocomplete.model.data[ 0 ].symbol }, 'Emoji result contains wrong result' );
 			} );
+		},
+
+		// (#2527)
+		'test emoji autocomplete is sorted in proper order': function( editor, bot ) {
+			emojiTools.runAfterInstanceReady( editor, bot, function( editor, bot ) {
+				var autocomplete = editor._.emoji.autocomplete,
+					expected = [ ':smiling_cat_face_with_heart-eyes:',
+						':smiling_face:',
+						':smiling_face_with_halo:',
+						':smiling_face_with_heart-eyes:',
+						':smiling_face_with_horns:',
+						':smiling_face_with_smiling_eyes:',
+						':smiling_face_with_sunglasses:',
+						':beaming_face_with_smiling_eyes:',
+						':grinning_cat_face_with_smiling_eyes:',
+						':grinning_face_with_smiling_eyes:',
+						':kissing_face_with_smiling_eyes:',
+						':slightly_smiling_face:'
+					],
+					actual;
+
+				bot.setHtmlWithSelection( '<p>foo :smiling^</p>' );
+				editor.editable().fire( 'keyup', new CKEDITOR.dom.event( {} ) );
+
+				actual = CKEDITOR.tools.array.map( autocomplete.model.data, function( el ) {
+					return el.id;
+				} );
+
+				arrayAssert.itemsAreSame( expected, actual );
+				assert.areSame( '<span>😻</span> smiling_cat_face_with_heart-eyes' , autocomplete.view.element.getChild( 0 ).getHtml(), 'First element in view should start from "smiling".' );
+			} );
+		},
+
+		// (#2583)
+		'test emoji autocomplete panel displays name': function( editor, bot ) {
+			emojiTools.runAfterInstanceReady( editor, bot, function( editor, bot ) {
+				bot.setHtmlWithSelection( '<p>:smiling_cat_face_with_heart-eyes:^</p>' );
+				editor.editable().fire( 'keyup', new CKEDITOR.dom.event( {} ) );
+
+				var element = CKEDITOR.document.findOne( '.cke_emoji-suggestion_item' );
+
+				assert.areEqual( element.getHtml(), '<span>😻</span> smiling_cat_face_with_heart-eyes' );
+			} );
 		}
 	};
 
-	tests = bender.tools.createTestsForEditors( CKEDITOR.tools.objectKeys( bender.editors ), tests );
-	CKEDITOR.tools.array.forEach( CKEDITOR.tools.objectKeys( singleTests ), function( key ) {
+	tests = bender.tools.createTestsForEditors( CKEDITOR.tools.object.keys( bender.editors ), tests );
+	CKEDITOR.tools.array.forEach( CKEDITOR.tools.object.keys( singleTests ), function( key ) {
 		if ( tests[ key ] === undefined ) {
 			tests[ key ] = singleTests[ key ];
 		}
