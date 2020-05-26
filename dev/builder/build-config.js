@@ -84,7 +84,7 @@ var CKBUILDER_CONFIG = {
 		'tab' : 1,
 		'tableresize' : 1,
 		'toolbar' : 1,
-		'undo' : 1
+		'undo' : 0
 	},
 	languages : {
 		'ar': 1,
