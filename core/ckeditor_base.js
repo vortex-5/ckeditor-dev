@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -201,11 +201,13 @@ if ( !window.CKEDITOR ) {
 						// Cleanup functions for the document ready method
 						if ( document.addEventListener ) {
 							document.removeEventListener( 'DOMContentLoaded', onReady, false );
+							window.removeEventListener( 'load', onReady, false );
 							executeCallbacks();
 						}
 						// Make sure body exists, at least, in case IE gets a little overzealous.
 						else if ( document.attachEvent && document.readyState === 'complete' ) {
 							document.detachEvent( 'onreadystatechange', onReady );
+							window.detachEvent( 'onload', onReady );
 							executeCallbacks();
 						}
 					} catch ( er ) {}

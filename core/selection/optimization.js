@@ -1,3 +1,12 @@
+/**
+ * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
+ * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
+ */
+
+/**
+ * @fileOverview Defines methods used for selection optimization.
+ */
+
 ( function() {
 	var preventListener = true,
 		preventOptimization = false;
@@ -74,7 +83,7 @@
 
 		var oldRange = range.clone();
 
-		range.shrink( CKEDITOR.SHRINK_TEXT, false, { skipBogus: true } );
+		range.shrink( CKEDITOR.SHRINK_TEXT, false, { skipBogus: !CKEDITOR.env.webkit } );
 
 		preventListener = false;
 

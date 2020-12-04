@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -66,7 +66,8 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 
 	var cssLength = CKEDITOR.tools.cssLength,
 		defaultDialogDefinition,
-		currentCover;
+		currentCover,
+		stylesLoaded = false;
 
 	function focusActiveTab( dialog ) {
 		dialog._.tabBarMode = true;
@@ -1276,6 +1277,7 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 					page = this._.tabs[ i ][ 1 ];
 				if ( i != id ) {
 					tab.removeClass( 'cke_dialog_tab_selected' );
+					tab.removeAttribute( 'aria-selected' );
 					page.hide();
 				}
 				page.setAttribute( 'aria-hidden', i != id );
@@ -1283,6 +1285,7 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 
 			var selected = this._.tabs[ id ];
 			selected[ 0 ].addClass( 'cke_dialog_tab_selected' );
+			selected[ 0 ].setAttribute( 'aria-selected', true );
 
 			// [IE] an invisible input[type='text'] will enlarge it's width
 			// if it's value is long when it shows, so we clear it's value
@@ -3494,24 +3497,23 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 			return dialog;
 		}
 	} );
+
+	CKEDITOR.plugins.add( 'dialog', {
+		requires: 'dialogui',
+		init: function( editor ) {
+			if ( !stylesLoaded ) {
+				CKEDITOR.document.appendStyleSheet( this.path + 'styles/dialog.css' );
+				stylesLoaded = true;
+			}
+
+			editor.on( 'doubleclick', function( evt ) {
+				if ( evt.data.dialog )
+					editor.openDialog( evt.data.dialog );
+			}, null, null, 999 );
+		}
+	} );
 } )();
 
-var stylesLoaded = false;
-
-CKEDITOR.plugins.add( 'dialog', {
-	requires: 'dialogui',
-	init: function( editor ) {
-		if ( !stylesLoaded ) {
-			CKEDITOR.document.appendStyleSheet( this.path + 'styles/dialog.css' );
-			stylesLoaded = true;
-		}
-
-		editor.on( 'doubleclick', function( evt ) {
-			if ( evt.data.dialog )
-				editor.openDialog( evt.data.dialog );
-		}, null, null, 999 );
-	}
-} );
 
 // Dialog related configurations.
 

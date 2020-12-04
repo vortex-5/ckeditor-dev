@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2019, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -60,6 +60,7 @@ var CKBUILDER_CONFIG = {
 		'clipboard' : 1,
 		'colorbutton' : 1,
 		'divarea' : 1,
+		'editorplaceholder': 1,
 		'enterkey': 1,
 		'entities' : 1,
 		'floatingspace' : 1,
@@ -74,6 +75,7 @@ var CKBUILDER_CONFIG = {
 		'liststyle' : 1,
 		'menubutton' : 1,
 		'pagebreak' : 1,
+		'pastefromlibreoffice': 1,
 		'quicktable' : 1,
 		'removeformat' : 1,
 		'richcombo' : 1,
