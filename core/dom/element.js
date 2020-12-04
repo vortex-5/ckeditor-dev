@@ -1676,7 +1676,7 @@ CKEDITOR.dom.element.clearMarkers = function( database, element, removeFromDatab
 			function scrollBy( x, y ) {
 				// Webkit doesn't support "scrollTop/scrollLeft"
 				// on documentElement/body element.
-				if ( /body|html/.test( parent.getName() ) )
+				if ( /^body|html$/.test( parent.getName() ) )
 					parent.getWindow().$.scrollBy( x, y );
 				else {
 					parent.$.scrollLeft += x;
