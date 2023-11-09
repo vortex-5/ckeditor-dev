@@ -833,6 +833,8 @@
 	}
 
 	function getSubList( li ) {
+		if ( !li )
+			return null;
 		var last = li.getLast( nonEmpty );
 		return last && last.type == CKEDITOR.NODE_ELEMENT && last.getName() in listNodeNames ? last : null;
 	}

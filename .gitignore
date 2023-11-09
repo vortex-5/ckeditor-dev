@@ -15,6 +15,8 @@ dev/builder/release/**
 dev/builder/ckbuilder/**
 dev/langtool/po/**
 dev/langtool/cklangtool/**
+dev/builder/*.js.map
+dev/builder/*-orig.js
 
 samples/toolbarconfigurator/.bender/**
 samples/toolbarconfigurator/node_modules/**

@@ -1,0 +1,6 @@
+[submodule "plugins/base64image"]
+	path = plugins/base64image
+	url = git@github.com:vortex-5/base64image.git
+[submodule "plugins/quicktable"]
+	path = plugins/quicktable
+	url = git@github.com:vortex-5/quicktable.git
