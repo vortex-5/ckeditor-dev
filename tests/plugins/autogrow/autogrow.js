@@ -1,71 +1,76 @@
 /* bender-tags: editor, autogrow */
 /* bender-ckeditor-plugins: autogrow */
+/* bender-include: _helpers/tools.js */
+/* global autogrowTools */
 
 ( function() {
 	'use strict';
 
-	bender.editors = {
-		editor: {},
-		borderless: {}
-	};
+	bender.editor = {};
 
 	bender.test( {
-		init: function() {
-			// Remove border for borderless editor.
-			var borderlessEditor = CKEDITOR.document.getById( 'cke_borderless' );
-			borderlessEditor.setStyle( 'border', 'none' );
-		},
-
-		'test autogrow': function() {
-			var editor = this.editors.editor,
-				bot = this.editorBots.editor;
-
-			var html = '',
-				initialEditorWidth = getEditorSize( editor ).width,
-				initialEditorHeight = getEditorSize( editor ).height;
-
-			for ( var i = 0; i < 6; i++ ) {
-				html += '<p>test ' + i + '</p>';
+		setUp: function() {
+			if ( bender.env.ie && bender.env.version < 9 ) {
+				assert.ignore();
 			}
+		},
+		// (#4372)
+		'test autogrow for editor width 200%': function() {
+			autogrowTools.testEditorSizeWithContent( '200%' );
+		},
+		// (#4372)
+		'test autogrow for editor width 20em': function() {
+			autogrowTools.testEditorSizeWithContent( '20em' );
+		},
+		// (#4372)
+		'test autogrow for editor width 200px': function() {
+			autogrowTools.testEditorSizeWithContent( '200px' );
+		},
+		// (#4372)
+		'test autogrow for editor width 200': function() {
+			autogrowTools.testEditorSizeWithContent( 200 );
+		},
+		// (#4372)
+		'test autogrow for editor width 0': function() {
+			autogrowTools.testEditorSizeWithContent( 0 );
+		},
+		// (#4372)
+		'test autogrow for editor width auto': function() {
+			autogrowTools.testEditorSizeWithContent( 'auto' );
+		},
+		// (#4286)
+		'test autogrow': function() {
+			var editor = this.editor,
+				bot = this.editorBot,
+				initialEditorSize = autogrowTools.getEditorSize( editor );
 
-			bot.setData( html, function() {
+			bot.setData( autogrowTools.getTestContent( 8 ), function() {
 				editor.once( 'afterCommandExec', function() {
 					resume( function() {
-						var editorWidth = getEditorSize( editor ).width,
-							editorHeight = getEditorSize( editor ).height;
+						var editorSize = autogrowTools.getEditorSize( editor );
 
-						assert.isTrue( editorHeight > initialEditorHeight, 'editor height should increase' );
-						assert.areEqual( editorWidth, initialEditorWidth, 'editor width should not change' );
+						assert.isTrue( editorSize.height > initialEditorSize.height, 'editor height should increase' );
+						assert.areEqual( editorSize.width, initialEditorSize.width, 'editor width should not change' );
 					} );
 				} );
 
 				editor.execCommand( 'autogrow' );
+
 				wait();
 			} );
 		},
 
-		// #4286
-		'test autogrow with borderless editor': function() {
-			var editor = this.editors.borderless,
-				bot = this.editorBots.borderless;
+		// (#4891)
+		'test autogrow shouldn\'t add inline width property to editor container': function() {
+			var editor = this.editor,
+				bot = this.editorBot;
 
-			var html = '',
-				initialEditorWidth = getEditorSize( editor ).width,
-				initialEditorHeight = getEditorSize( editor ).height;
-
-			for ( var i = 0; i < 6; i++ ) {
-				html += '<p>test ' + i + '</p>';
-			}
-
-			bot.setData( html, function() {
+			bot.setData( autogrowTools.getTestContent( 10 ), function() {
 				editor.once( 'afterCommandExec', function() {
 					resume( function() {
-						var editorWidth = getEditorSize( editor ).width,
-							editorHeight = getEditorSize( editor ).height;
+						var editorContainerInlineWidth = editor.container.getStyle( 'width' );
 
-						assert.isTrue( editorHeight > initialEditorHeight, 'editor height should increase' );
-						assert.isTrue( editorWidth > 0, 'editor width should be greater than zero' );
-						assert.areEqual( editorWidth, initialEditorWidth, 'editor width should not change' );
+						assert.areSame( editorContainerInlineWidth, '', 'Editor shouldn\'t have any inline width property' );
 					} );
 				} );
 
@@ -74,11 +79,4 @@
 			} );
 		}
 	} );
-
-	function getEditorSize( editor ) {
-		return {
-			width: parseInt( editor.editable().getComputedStyle( 'width' ), 10 ),
-			height: parseInt( editor.editable().getComputedStyle( 'height' ), 10 )
-		};
-	}
 } )();

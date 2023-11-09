@@ -93,10 +93,10 @@
 			scrollTop = CKEDITOR.document.getWindow().getScrollPosition().y;
 
 			var expectedLeft = makeExpectedLeft( frame.left + elementFrame.left + elementFrame.width / 2 - 50 );
-			assert.areEqual( expectedLeft, balloonToolbarRect.left.toFixed( 2 ), 'left align' );
+			assert.areEqual( expectedLeft, balloonToolbarRect.left.toFixed( 1 ), 'left align' );
 			// We have to add 1px because of border.
-			assert.areEqual( ( frame.top + frame.height - scrollTop ).toFixed( 2 ),
-				( rectTop + balloonToolbar.height + balloonToolbar.triangleHeight + 1 ).toFixed( 2 ), 'top align' );
+			assert.areEqual( ( frame.top + frame.height - scrollTop ).toFixed( 1 ),
+				( rectTop + balloonToolbar.height + balloonToolbar.triangleHeight + 1 ).toFixed( 1 ), 'top align' );
 		},
 
 		'test panel - out of view - hcenter top': function( editor ) {
@@ -130,8 +130,8 @@
 
 			expectedLeft = makeExpectedLeft( frame.left + elementFrame.left + elementFrame.width / 2 - 50 );
 
-			assert.areEqual( expectedLeft, balloonToolbarRect.left.toFixed( 2 ), 'left align' );
-			assert.areEqual( ( frame.top - scrollTop ).toFixed( 2 ), ( rectTop - balloonToolbar.triangleHeight ).toFixed( 2 ), 'top align' );
+			assert.areEqual( expectedLeft, balloonToolbarRect.left.toFixed( 1 ), 'left align' );
+			assert.areEqual( ( frame.top - scrollTop ).toFixed( 1 ), ( rectTop - balloonToolbar.triangleHeight ).toFixed( 1 ), 'top align' );
 			balloonToolbar.destroy();
 			balloonToolbar = null;
 		},
@@ -165,11 +165,6 @@
 
 		// (#1342, #1496)
 		'test panel refresh position': function( editor, bot ) {
-			// (#3868)
-			if ( CKEDITOR.env.ie ) {
-				assert.ignore();
-			}
-
 			bot.setData( '<img src="' + bender.basePath + '/_assets/lena.jpg">', function() {
 				balloonToolbar = new CKEDITOR.ui.balloonToolbarView( editor, {
 					width: 100,
@@ -180,10 +175,11 @@
 					spy = sinon.spy( balloonToolbar, 'reposition' ),
 					// This test randomly fails when run from dashboard. That's because balloon toolbar
 					// uses also other listeners to reposition, which might be fired before `change`.
-					// Prevent all other event's for this TC to check if it's correctly repositions on `change` #(2979).
+					// Prevent all other event's for this TC to check if it's correctly repositions on `change` #(2979, #5056).
 					listeners = [
 						editor.on( 'resize', cancelEvent ),
 						CKEDITOR.document.getWindow().on( 'resize', cancelEvent ),
+						CKEDITOR.document.getWindow().on( 'scroll', cancelEvent ),
 						editor.editable().getDocument().on( 'scroll', cancelEvent )
 					],
 					initialPosition,
@@ -310,9 +306,9 @@
 
 	function makeExpectedLeft( data ) {
 		if ( CKEDITOR.env.ie && CKEDITOR.env.version <= 9 ) {
-			return data.toFixed( 0 ) + '.00';
+			return data.toFixed( 0 ) + '.0';
 		} else {
-			return data.toFixed( 2 );
+			return data.toFixed( 1 );
 		}
 	}
 

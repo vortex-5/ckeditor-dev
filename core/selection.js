@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -578,8 +578,8 @@
 		};
 	} )();
 
-	// Handle left, right, delete and backspace keystrokes next to non-editable elements
-	// by faking selection on them.
+	// Handle left and right keystrokes next to non-editable elements by faking selection on them.
+	// Delete and backspace keystrokes can delete empty paragraphs between the widgets (#1572).
 	function getOnKeyDownListener( editor ) {
 		var keystrokes = { 37: 1, 39: 1, 8: 1, 46: 1 };
 
@@ -587,25 +587,54 @@
 			var keystroke = evt.data.getKeystroke();
 
 			// Handle only left/right/del/bspace keys.
-			if ( !keystrokes[ keystroke ] )
+			if ( !keystrokes[ keystroke ] ) {
 				return;
+			}
 
 			var sel = editor.getSelection(),
 				ranges = sel.getRanges(),
-				range = ranges[ 0 ];
+				range = ranges[ 0 ],
+				startElement;
 
 			// Handle only single range and it has to be collapsed.
-			if ( ranges.length != 1 || !range.collapsed )
+			if ( !sel.isCollapsed() ) {
 				return;
+			}
 
 			var next = range[ keystroke < 38 ? 'getPreviousEditableNode' : 'getNextEditableNode' ]();
 
 			if ( next && next.type == CKEDITOR.NODE_ELEMENT && next.getAttribute( 'contenteditable' ) == 'false' ) {
+
+				// Allow removal of empty paragraphs (#1572).
+				startElement = sel.getStartElement();
+
+				if ( isEmptyBlock( startElement ) && isDeleteAction( keystroke ) ) {
+					startElement.remove();
+
+					// Save an undo restore point.
+					editor.fire( 'saveSnapshot' );
+				}
+
 				editor.getSelection().fake( next );
 				evt.data.preventDefault();
 				evt.cancel();
 			}
 		};
+
+		function isDeleteAction( keystroke ) {
+			return ( keystroke === 8 || keystroke === 46 );
+		}
+
+		function isEmptyElement( element ) {
+			var text = element.$.textContent === undefined ? element.$.innerText : element.$.textContent;
+
+			// Check if the element does not contain a widget to prevent removal of the body element. (#5125)
+			return text === '' && !isWidget( element.getFirst() );
+		}
+
+		function isEmptyBlock( block ) {
+			return block.isBlockBoundary() && isEmptyElement( block );
+		}
 	}
 
 	// If fake selection should be applied this function will return instance of
@@ -1222,7 +1251,7 @@
 	 * @method
 	 * @member CKEDITOR.editor
 	 * @param {Boolean} forceRealSelection Return real selection, instead of saved or fake one.
-	 * @returns {CKEDITOR.dom.selection} A selection object or null if not available for the moment.
+	 * @returns {CKEDITOR.dom.selection/null} A selection object or null if not available for the moment.
 	 */
 	CKEDITOR.editor.prototype.getSelection = function( forceRealSelection ) {
 
@@ -1232,7 +1261,8 @@
 
 		// Editable element might be absent or editor might not be in a wysiwyg mode.
 		var editable = this.editable();
-		return editable && this.mode == 'wysiwyg' ? new CKEDITOR.dom.selection( editable ) : null;
+
+		return editable && this.mode == 'wysiwyg' && this.status !== 'recreating' ? new CKEDITOR.dom.selection( editable ) : null;
 	};
 
 	/**

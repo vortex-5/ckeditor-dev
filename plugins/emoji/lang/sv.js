@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
 For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
 */
 CKEDITOR.plugins.setLang( 'emoji', 'sv', {
@@ -8,10 +8,10 @@ CKEDITOR.plugins.setLang( 'emoji', 'sv', {
 	navigationLabel: 'Groups navigation for emoji sections.', // MISSING
 	title: 'Emojilista',
 	groups: {
-		people: 'People', // MISSING
-		nature: 'Nature and animals', // MISSING
-		food: 'Food and drinks', // MISSING
-		travel: 'Travel and places', // MISSING
+		people: 'Människor',
+		nature: 'Natur och djur',
+		food: 'Mat och dryck',
+		travel: 'Resor och platser',
 		activities: 'Aktiviteter',
 		objects: 'Objekt',
 		symbols: 'Symboler',

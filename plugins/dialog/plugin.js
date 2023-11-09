@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -905,7 +905,8 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 				CKEDITOR.dialog._.currentTop = this;
 				this._.parentDialog = null;
 				showCover( this._.editor );
-			} else {
+			} else if ( CKEDITOR.dialog._.currentTop !== this ) {
+				// Reposition the new dialog only if the current dialog is not already on the top (#3638).
 				this._.parentDialog = CKEDITOR.dialog._.currentTop;
 
 				var parentElement = this._.parentDialog.getElement().getFirst();
@@ -1028,7 +1029,7 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 		foreach: function( fn ) {
 			for ( var i in this._.contents ) {
 				for ( var j in this._.contents[ i ] ) {
-					fn.call( this, this._.contents[i][j] );
+					fn.call( this, this._.contents[ i ][ j ] );
 				}
 			}
 
@@ -1124,9 +1125,12 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 			if ( !this._.parentDialog ) {
 				hideCover( this._.editor );
 			} else {
-				var parentElement = this._.parentDialog.getElement().getFirst();
-				this._.parentDialog.getElement().removeStyle( 'z-index' );
-				parentElement.setStyle( 'z-index', parseInt( parentElement.$.style.zIndex, 10 ) + Math.floor( this._.editor.config.baseFloatZIndex / 2 ) );
+				var parentElement = this._.parentDialog.getElement().getFirst(),
+					newZIndex = parseInt( parentElement.$.style.zIndex, 10 ) +
+						Math.floor( this._.editor.config.baseFloatZIndex / 2 );
+
+				this._.parentDialog.getElement().setStyle( 'z-index', newZIndex );
+				parentElement.setStyle( 'z-index', newZIndex );
 			}
 			CKEDITOR.dialog._.currentTop = this._.parentDialog;
 
@@ -1534,12 +1538,16 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 				// Finally, show the spinner.
 				this.parts.spinner.show();
 
-				this.getButton( 'ok' ).disable();
+				if ( this.getButton( 'ok' ) ) {
+					this.getButton( 'ok' ).disable();
+				}
 			} else if ( state == CKEDITOR.DIALOG_STATE_IDLE ) {
 				// Hide the spinner. But don't do anything if there is no spinner yet.
 				this.parts.spinner && this.parts.spinner.hide();
 
-				this.getButton( 'ok' ).enable();
+				if ( this.getButton( 'ok' ) ) {
+					this.getButton( 'ok' ).enable();
+				}
 			}
 
 			this.fire( 'state', state );
@@ -2691,7 +2699,7 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 							html.push( '<td class="', className, '" role="presentation" ' );
 							if ( widths ) {
 								if ( widths[ i ] ) {
-									styles.push( 'width:' + cssLength( widths[i] ) );
+									styles.push( 'width:' + cssLength( widths[ i ] ) );
 								}
 							} else {
 								styles.push( 'width:' + Math.floor( 100 / childHtmlList.length ) + '%' );
@@ -3164,12 +3172,11 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 	};
 
 	( function() {
-		var notEmptyRegex = /^([a]|[^a])+$/,
-			integerRegex = /^\d*$/,
+		var integerRegex = /^\d*$/,
 			numberRegex = /^\d*(?:\.\d+)?$/,
 			htmlLengthRegex = /^(((\d*(\.\d+))|(\d*))(px|\%)?)?$/,
 			cssLengthRegex = /^(((\d*(\.\d+))|(\d*))(px|em|ex|in|cm|mm|pt|pc|\%)?)?$/i,
-			inlineStyleRegex = /^(\s*[\w-]+\s*:\s*[^:;]+(?:;|$))*$/;
+			inlineStylePropertyRegex = /^(--|-?([a-zA-Z_]|\\))(\\|[a-zA-Z0-9-_])*\s*?:\s*?[^:;]+$/;
 
 		/**
 		 * {@link CKEDITOR.dialog Dialog} `OR` logical value indicates the
@@ -3208,6 +3215,8 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 			 * 	'error!'
 			 * );
 			 * ```
+			 * **Note:** validation functions should return `true` value for successful validation. Since 4.19.1
+			 * this method does not coerce return type to boolean.
 			 *
 			 * @param {Function...} validators Validation functions which will be composed into a single validator.
 			 * @param {String} [msg] Error message returned by the composed validation function.
@@ -3218,12 +3227,14 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 			 */
 			functions: function() {
 				var args = arguments;
-				return function() {
+				return function( value ) {
 					// It's important for validate functions to be able to accept the value
 					// as argument in addition to this.getValue(), so that it is possible to
 					// combine validate functions together to make more sophisticated
 					// validators.
-					var value = this && this.getValue ? this.getValue() : args[ 0 ];
+					if ( this && this.getValue ) {
+						value = this.getValue();
+					}
 
 					var msg,
 						relation = CKEDITOR.VALIDATE_AND,
@@ -3231,10 +3242,11 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 						i;
 
 					for ( i = 0; i < args.length; i++ ) {
-						if ( typeof args[ i ] == 'function' )
+						if ( typeof args[ i ] == 'function' ) {
 							functions.push( args[ i ] );
-						else
+						} else {
 							break;
+						}
 					}
 
 					if ( i < args.length && typeof args[ i ] == 'string' ) {
@@ -3242,27 +3254,39 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 						i++;
 					}
 
-					if ( i < args.length && typeof args[ i ] == 'number' )
+					if ( i < args.length && typeof args[ i ] == 'number' ) {
 						relation = args[ i ];
-
-					var passed = ( relation == CKEDITOR.VALIDATE_AND ? true : false );
-					for ( i = 0; i < functions.length; i++ ) {
-						if ( relation == CKEDITOR.VALIDATE_AND )
-							passed = passed && functions[ i ]( value );
-						else
-							passed = passed || functions[ i ]( value );
 					}
+
+					var passed = runValidators( functions, relation, value );
 
 					return !passed ? msg : true;
 				};
+
+				function runValidators( functions, relation, value ) {
+					var passed = relation == CKEDITOR.VALIDATE_AND;
+
+					for ( var i = 0; i < functions.length; i++ ) {
+						// Do not confuse `true` with `truthy` not empty error message (#4449).
+						var doesValidationPassed = functions[ i ]( value ) === true;
+
+						if ( relation == CKEDITOR.VALIDATE_AND ) {
+							passed = passed && doesValidationPassed;
+						} else {
+							passed = passed || doesValidationPassed;
+						}
+					}
+
+					return passed;
+				}
 			},
 
 			/**
 			 * Checks if a dialog UI element value meets the regex condition.
 			 *
 			 * ```javascript
-			 * CKEDITOR.dialog.validate.regex( 'error!', /^\d*$/ )( '123' ) // true
-			 * CKEDITOR.dialog.validate.regex( 'error!' )( '123.321' ) // error!
+			 * CKEDITOR.dialog.validate.regex( /^\d*$/, 'error!' )( '123' ) // true
+			 * CKEDITOR.dialog.validate.regex( /^\d*$/, 'error!' )( '123.321' ) // error!
 			 * ```
 			 *
 			 * @param {RegExp} regex Regular expression used to validate the value.
@@ -3270,14 +3294,9 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 			 * @returns {Function} Validation function.
 			 */
 			regex: function( regex, msg ) {
-				/*
-				 * Can be greatly shortened by deriving from functions validator if code size
-				 * turns out to be more important than performance.
-				 */
-				return function() {
-					var value = this && this.getValue ? this.getValue() : arguments[ 0 ];
-					return !regex.test( value ) ? msg : true;
-				};
+				return this.functions( function( val ) {
+					return regex.test( val );
+				}, msg );
 			},
 
 			/**
@@ -3292,7 +3311,12 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 			 * @returns {Function} Validation function.
 			 */
 			notEmpty: function( msg ) {
-				return this.regex( notEmptyRegex, msg );
+				return this.functions( function( val ) {
+					var trimCharacters = '\\u0020\\u00a0\\u1680\\u202f\\u205f\\u3000\\u2000-\\u200a\\s',
+						trimRegex = new RegExp( '^[' + trimCharacters + ']+|[' + trimCharacters + ']+$', 'g' );
+
+					return val.replace( trimRegex, '' ).length > 0;
+				}, msg );
 			},
 
 			/**
@@ -3367,6 +3391,7 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 			 * Checks if a dialog UI element value is a correct CSS inline style.
 			 *
 			 * ```javascript
+			 * CKEDITOR.dialog.validate.inlineStyle( 'error!' )( '' ) // true
 			 * CKEDITOR.dialog.validate.inlineStyle( 'error!' )( 'height: 10px; width: 20px;' ) // true
 			 * CKEDITOR.dialog.validate.inlineStyle( 'error!' )( 'test' ) // error!
 			 * ```
@@ -3376,7 +3401,18 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
 			 */
 			'inlineStyle': function( msg ) {
 				return this.functions( function( val ) {
-					return inlineStyleRegex.test( CKEDITOR.tools.trim( val ) );
+					var properties = CKEDITOR.tools.trim( val ).split( ';' );
+
+					// Empty value is treated as valid value. It can be the only value (when empty 'val' provided)
+					// or the last one in table after splitting (due to ';' on end).
+					// Such value is removed so `every` call below can check for valid non-empty values only.
+					if ( properties[ properties.length - 1 ] === '' ) {
+						properties.pop();
+					}
+
+					return CKEDITOR.tools.array.every( properties, function( property ) {
+						return inlineStylePropertyRegex.test( CKEDITOR.tools.trim( property ) );
+					} );
 				}, msg );
 			},
 
@@ -3581,7 +3617,7 @@ CKEDITOR.DIALOG_STATE_BUSY = 2;
  * **Note:** Be cautious when specifying dialog tabs that are mandatory,
  * like `'info'`, dialog functionality might be broken because of this!
  *
- *		config.removeDialogTabs = 'flash:advanced;image:Link';
+ *		config.removeDialogTabs = 'table:advanced;image:Link';
  *
  * @since 3.5.0
  * @cfg {String} [removeDialogTabs='']

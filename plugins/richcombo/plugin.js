@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -318,6 +318,21 @@ CKEDITOR.plugins.add( 'richcombo', {
 
 					textElement.setText( typeof text != 'undefined' ? text : value );
 				}
+
+				var newLabel = createLabel( typeof text != 'undefined' ? text : value, this.label ),
+					labelElement = this.document.getById( 'cke_' + this.id + '_label' );
+
+				if ( labelElement ) {
+					labelElement.setText( newLabel );
+				}
+
+				function createLabel( newLabel, initialLabel ) {
+					if ( newLabel === initialLabel ) {
+						return newLabel;
+					}
+
+					return newLabel + ', ' + initialLabel;
+				}
 			},
 
 			getValue: function() {
@@ -350,10 +365,11 @@ CKEDITOR.plugins.add( 'richcombo', {
 			 * @param {String} value
 			 * @param {String} html
 			 * @param {String} text
+			 * @param {String} language
 			 */
-			add: function( value, html, text ) {
+			add: function( value, html, text, language ) {
 				this._.items[ value ] = text || value;
-				this._.list.add( value, html, text );
+				this._.list.add( value, html, text, language );
 			},
 
 			startGroup: function( title ) {

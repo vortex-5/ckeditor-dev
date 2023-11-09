@@ -1,44 +1,104 @@
-sudo: required
-dist: xenial
-services:
-  - xvfb
-
 branches:
   only:
+  - next
   - master
   - major
   - stable
   - latest
   - /^\d+\.\d+(\.\d+)?(-\S*)?$/
   - /^release\/\d+\.\d+\.x$/
+  - /^[\d]{4,5}security$/
 
-language: node_js
-
-node_js:
-  - 10
+git:
+  depth: false
 
 env:
-  - BUILD=0 BROWSER=Chrome
-  - BUILD=1 BROWSER=Chrome
-  - BUILD=0 BROWSER=Firefox MOZ_HEADLESS=1
-  - BUILD=1 BROWSER=Firefox MOZ_HEADLESS=1
+  global:
+    - FULL_RUN=$(if [ "$FULL_RUN_TRAVIS_CFG" != "" ]; then echo "$FULL_RUN_TRAVIS_CFG"; elif [ "$TRAVIS_EVENT_TYPE" = "cron" ]; then echo "fullRun"; else echo ""; fi)
+    - REPO_NAME=$(IFS='/' read -r -a array <<< "$TRAVIS_REPO_SLUG"; echo ${array[1]};)
+    - TARGET_BRANCH=$(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "$TRAVIS_BRANCH^"; else echo "$TRAVIS_BRANCH"; fi)
+    - CURRENT_BRANCH=$(if [ "$TRAVIS_PULL_REQUEST" = "false" ]; then echo "$TRAVIS_BRANCH"; else echo "$TRAVIS_PULL_REQUEST_BRANCH"; fi)
 
-addons:
-  firefox: "latest"
-  chrome: stable
+jobs:
+  exclude:
+    - language: ruby
+  include:
+    - name: Chrome (Linux)
+      os: linux
+      dist: xenial
+      language: node_js
+      node_js: 10
+      services:
+        - xvfb
+      addons:
+        chrome: stable
+      install:
+        - npm install npm@7 -g
+        - npm --version
+      before_script:
+        - echo $TRAVIS_EVENT_TYPE
+        # Setup xvfb
+        - 'export DISPLAY=:99.0'
+        - 'sleep 3'
+        # Setup CKEditor 4 testing environment
+        - pwd
+        - npm install benderjs-cli -g
+        - npm i
+        # Setup additional dependency
+        - |
+          if [[ "$EXTRA_DEPS_TRAVIS" == "true" ]]; then
+            git clone $DEPS_TRAVIS $DEPS_LOCATION_TRAVIS --quiet
+            cd $DEPS_LOCATION_TRAVIS
+            git checkout $TRAVIS_PULL_REQUEST_BRANCH || true
+            cd ../..
+          fi
+        # Setup bender test runner
+        - cd ..
+        - pwd
+        - git clone https://github.com/ckeditor/ckeditor4-benderjs-runner.git --branch v1.2.0 --single-branch
+        - cd ckeditor4-benderjs-runner
+        - npm i
+      script:
+        - pwd
+        - echo "Running tests based on diff between $TARGET_BRANCH and $CURRENT_BRANCH"
+        - npm run start -- --configFile "../../$REPO_NAME/bender-runner.config.json" --targetBranch "$TARGET_BRANCH" --currentBranch "$CURRENT_BRANCH" --browser "chrome" --fullRun "$FULL_RUN" --repoPath "../$REPO_NAME/" --prRepoSlug "$TRAVIS_PULL_REQUEST_SLUG"
 
-before_script:
-  # Prepare environment.
-  - 'npm install benderjs-cli -g'
-  - 'export DISPLAY=:99.0'
-  - 'sleep 3'
-
-  # The $TRAVIS_BRANCH points to target branch for PRs and for other branches it is the current branch name.
-  - 'BUILD_PATH=0'
-  - 'if [ "$BUILD" = "1" ] && ( [ "$TRAVIS_BRANCH" = "master" ] || [ "$TRAVIS_BRANCH" = "major" ] ); then
-        sh -e ./dev/travis/build.sh $TRAVIS_BRANCH && BUILD_PATH="$(sh -e ./dev/travis/buildpath.sh)";
-    fi'
-
-script:
-  - 'if [ "$BUILD" = "0" ]; then bender run -c bender.ci.js; fi'
-  - 'if [ "$BUILD" = "1" ] && [ "$BUILD_PATH" != "0" ]; then cd $BUILD_PATH && bender run -c bender.ci.js; fi'
+    - name: Firefox (Linux)
+      os: linux
+      dist: xenial
+      language: node_js
+      node_js: 10
+      services:
+        - xvfb
+      addons:
+        firefox: latest
+      install:
+        - npm install npm@7 -g
+        - npm --version
+      before_script:
+        - echo $TRAVIS_EVENT_TYPE
+        # Setup xvfb
+        - 'export DISPLAY=:99.0'
+        - 'sleep 3'
+        # Setup CKEditor 4 testing environment
+        - pwd
+        - npm install benderjs-cli -g
+        - npm i
+        # Setup additional dependency
+        - |
+          if [[ "$EXTRA_DEPS_TRAVIS" == "true" ]]; then
+            git clone $DEPS_TRAVIS $DEPS_LOCATION_TRAVIS --quiet
+            cd $DEPS_LOCATION_TRAVIS
+            git checkout $TRAVIS_PULL_REQUEST_BRANCH || true
+            cd ../..
+          fi
+        # Setup bender test runner
+        - cd ..
+        - pwd
+        - git clone https://github.com/ckeditor/ckeditor4-benderjs-runner.git --branch v1.2.0 --single-branch
+        - cd ckeditor4-benderjs-runner
+        - npm i
+      script:
+        - pwd
+        - echo "Running tests based on diff between $TARGET_BRANCH and $CURRENT_BRANCH"
+        - npm run start -- --configFile "../../$REPO_NAME/bender-runner.config.json" --targetBranch "$TARGET_BRANCH" --currentBranch "$CURRENT_BRANCH" --browser "firefox" --fullRun "$FULL_RUN" --repoPath "../$REPO_NAME/" --prRepoSlug "$TRAVIS_PULL_REQUEST_SLUG"

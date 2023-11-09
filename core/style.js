@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -1887,6 +1887,8 @@ CKEDITOR.styleCommand.prototype.exec = function( editor ) {
 
 /**
  * Manages styles registration and loading. See also {@link CKEDITOR.config#stylesSet}.
+ *
+ * **Note** This object is an instance of {@link CKEDITOR.resourceManager}.
  *
  *		// The set of styles for the <b>Styles</b> drop-down list.
  *		CKEDITOR.stylesSet.add( 'default', [

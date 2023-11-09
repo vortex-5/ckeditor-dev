@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -175,6 +175,15 @@
 		this.throttle = config.throttle !== undefined ? config.throttle : 20;
 
 		/**
+		 * Indicates if a following space should be added after inserted match into an editor.
+		 *
+		 * @since 4.20.0
+		 * @readonly
+		 * @property {Boolean} [followingSpace]
+		 */
+		this.followingSpace = config.followingSpace;
+
+		/**
 		 * The autocomplete view instance.
 		 *
 		 * @readonly
@@ -278,6 +287,9 @@
 			this._listeners.push( this.view.on( 'change-selectedItemId', this.onSelectedItemId, this ) );
 			this._listeners.push( this.view.on( 'click-item', this.onItemClick, this ) );
 
+			// (#4617)
+			this._listeners.push( this.model.on( 'change-isActive', this.updateAriaAttributesOnEditable, this ) );
+
 			// Update view position on viewport change.
 			// Note: CKEditor's event system has a limitation that one function
 			// cannot be used as listener for the same event more than once. Hence, wrapper functions.
@@ -293,9 +305,11 @@
 				e.data.preventDefault();
 			}, null, null, 9999 ) );
 
-			// Register keybindings if editor is already initialized.
+			// Register keybindings and add ARIA attributes to the editable right away
+			// if editor is already initialized.
 			if ( editable ) {
 				this.registerPanelNavigation();
+				this.addAriaAttributesToEditable();
 			}
 
 			// Note: CKEditor's event system has a limitation that one function
@@ -303,6 +317,7 @@
 			// (#4107)
 			editor.on( 'contentDom', function() {
 				this.registerPanelNavigation();
+				this.addAriaAttributesToEditable();
 			}, this );
 		},
 
@@ -315,6 +330,73 @@
 			this._listeners.push( editable.attachListener( editable, 'keydown', function( evt ) {
 				this.onKeyDown( evt );
 			}, this, null, 5 ) );
+		},
+
+		/**
+		 * @since 4.16.1
+		 */
+		addAriaAttributesToEditable: function() {
+			var editable = this.editor.editable(),
+				autocompleteId = this.view.element.getAttribute( 'id' );
+
+			if ( !editable.isInline() ) {
+				return;
+			}
+
+			editable.setAttribute( 'aria-controls', autocompleteId );
+			editable.setAttribute( 'aria-activedescendant', '' );
+			editable.setAttribute( 'aria-autocomplete', 'list' );
+			editable.setAttribute( 'aria-expanded', 'false' );
+		},
+
+		/**
+		 * @since 4.16.1
+		 */
+		updateAriaAttributesOnEditable: function( evt ) {
+			var editable = this.editor.editable(),
+				isActive = evt.data;
+
+			if ( !editable || !editable.isInline() ) {
+				return;
+			}
+
+			editable.setAttribute( 'aria-expanded', isActive ? 'true' : 'false' );
+
+			if ( !isActive ) {
+				editable.setAttribute( 'aria-activedescendant', '' );
+			}
+		},
+
+		/**
+		 * @since 4.16.1
+		 */
+		updateAriaActiveDescendantAttributeOnEditable: function( id ) {
+			var editable = this.editor.editable();
+
+			if ( !editable.isInline() ) {
+				return;
+			}
+
+			editable.setAttribute( 'aria-activedescendant', id );
+		},
+
+		/**
+		 * @since 4.16.1
+		 */
+		removeAriaAttributesFromEditable: function() {
+			var editable = this.editor.editable();
+
+			if ( !editable || !editable.isInline() ) {
+				return;
+			}
+
+			editable.removeAttributes( [
+				'aria-controls',
+				'aria-expanded',
+				'aria-activedescendant'
+			] );
+
+			editable.setAttribute( 'aria-autocomplete', 'none' );
 		},
 
 		/**
@@ -351,11 +433,20 @@
 			}
 
 			var item = this.model.getItemById( itemId ),
-				editor = this.editor;
+				editor = this.editor,
+				html = this.getHtmlToInsert( item );
+
+			// Insert space after accepting match (#2008).
+			html += this.followingSpace ? '&nbsp;' : '';
 
 			editor.fire( 'saveSnapshot' );
 			editor.getSelection().selectRanges( [ this.model.range ] );
-			editor.insertHtml( this.getHtmlToInsert( item ), 'text' );
+			editor.insertHtml( html, 'text' );
+
+			if ( this.followingSpace ) {
+				removeLeadingSpace( editor );
+			}
+
 			editor.fire( 'saveSnapshot' );
 		},
 
@@ -371,6 +462,7 @@
 			this._listeners = [];
 
 			this.view.element && this.view.element.remove();
+			this.removeAriaAttributesFromEditable();
 		},
 
 		/**
@@ -526,8 +618,13 @@
 		 * @private
 		 */
 		onSelectedItemId: function( evt ) {
-			this.model.setItem( evt.data );
-			this.view.selectItem( evt.data );
+			var itemId = evt.data,
+				selectedItem = this.view.getItemById( itemId );
+
+			this.model.setItem( itemId );
+			this.view.selectItem( itemId );
+
+			this.updateAriaActiveDescendantAttributeOnEditable( selectedItem.getAttribute( 'id' ) );
 		},
 
 		/**
@@ -726,11 +823,16 @@
 		 * @returns {CKEDITOR.dom.element}
 		 */
 		createElement: function() {
-			var el = new CKEDITOR.dom.element( 'ul', this.document );
+			var el = new CKEDITOR.dom.element( 'ul', this.document ),
+				id = CKEDITOR.tools.getNextId();
 
+			// Id is needed to correctly bind autocomplete with the editable (#4617).
+			el.setAttribute( 'id', id );
 			el.addClass( 'cke_autocomplete_panel' );
 			// Below float panels and context menu, but above maximized editor (-5).
 			el.setStyle( 'z-index', this.editor.config.baseFloatZIndex - 3 );
+			// Add also appropriate role (#4617).
+			el.setAttribute( 'role', 'listbox' );
 
 			return el;
 		},
@@ -742,8 +844,15 @@
 		 * @returns {CKEDITOR.dom.element}
 		 */
 		createItem: function( item ) {
-			var encodedItem = encodeItem( item );
-			return CKEDITOR.dom.element.createFromHtml( this.itemTemplate.output( encodedItem ), this.document );
+			var encodedItem = encodeItem( item ),
+				itemElement = CKEDITOR.dom.element.createFromHtml( this.itemTemplate.output( encodedItem ), this.document ),
+				id = CKEDITOR.tools.getNextId();
+
+			// Add attributes needed for a11y support (#4617).
+			itemElement.setAttribute( 'id', id );
+			itemElement.setAttribute( 'role', 'option' );
+
+			return itemElement;
 		},
 
 		/**
@@ -857,94 +966,165 @@
 		 * For example, the position of the bottom end of the caret.
 		 */
 		setPosition: function( rect ) {
-			var editor = this.editor,
-				viewHeight = this.element.getSize( 'height' ),
-				editable = editor.editable(),
-				// Bounding rect where the view should fit (visible editor viewport).
-				editorViewportRect;
-
-			// iOS classic editor has different viewport element (#1910).
-			if ( CKEDITOR.env.iOS && !editable.isInline() ) {
-				editorViewportRect = iOSViewportElement( editor ).getClientRect( true );
-			} else {
-				editorViewportRect = editable.isInline() ? editable.getClientRect( true ) : editor.window.getFrame().getClientRect( true );
-			}
-
-			// How much space is there for the view above and below the specified rect.
-			var spaceAbove = rect.top - editorViewportRect.top,
-				spaceBelow = editorViewportRect.bottom - rect.bottom,
-				top;
-
-			// As a default, keep the view inside the editor viewport.
-			// +---------------------------------------------+
-			// |       editor viewport                       |
-			// |                                             |
-			// |                                             |
-			// |                                             |
-			// |     █ - caret position                      |
-			// |     +--------------+                        |
-			// |     |     view     |                        |
-			// |     +--------------+                        |
-			// |                                             |
-			// |                                             |
-			// +---------------------------------------------+
-			top = rect.top < editorViewportRect.top ? editorViewportRect.top : Math.min( editorViewportRect.bottom, rect.bottom );
-
-			// If the view doesn't fit below the caret position and fits above, set it there.
-			// This means that the position below the caret is preferred.
-			// +---------------------------------------------+
-			// |                                             |
-			// |       editor viewport                       |
-			// |     +--------------+                        |
-			// |     |              |                        |
-			// |     |     view     |                        |
-			// |     |              |                        |
-			// |     +--------------+                        |
-			// |     █ - caret position                      |
-			// |                                             |
-			// +---------------------------------------------+
-			if ( viewHeight > spaceBelow && viewHeight < spaceAbove ) {
-				top = rect.top - viewHeight;
-			}
-
-			// If the caret position is below the view - keep it at the bottom edge.
-			// +---------------------------------------------+
-			// |       editor viewport                       |
-			// |                                             |
-			// |     +--------------+                        |
-			// |     |              |                        |
-			// |     |     view     |                        |
-			// |     |              |                        |
-			// +-----+==============+------------------------+
-			// |																						 |
-			// |     █ - caret position                      |
-			// |                                             |
-			// +---------------------------------------------+
-			if ( editorViewportRect.bottom < rect.bottom ) {
-				top = Math.min( rect.top - viewHeight, editorViewportRect.bottom - viewHeight );
-			}
-
-			// If the caret position is above the view - keep it at the top edge.
-			// +---------------------------------------------+
-			// |																						 |
-			// |     █ - caret position                      |
-			// |                                             |
-			// +-----+==============+------------------------+
-			// |     |              |                        |
-			// |     |     view     |                        |
-			// |     |              |                        |
-			// |     +--------------+                        |
-			// |																						 |
-			// |       editor viewport                       |
-			// +---------------------------------------------+
-			if ( editorViewportRect.top > rect.top ) {
-				top = Math.max( rect.bottom, editorViewportRect.top );
-			}
+			var documentWindow = this.element.getWindow(),
+				windowRect = documentWindow.getViewPaneSize(),
+				top = getVerticalPosition( {
+					editorViewportRect: getEditorViewportRect( this.editor ),
+					caretRect: rect,
+					viewHeight: this.element.getSize( 'height' ),
+					scrollPositionY: documentWindow.getScrollPosition().y,
+					windowHeight: windowRect.height
+				} ),
+				left = getHorizontalPosition( {
+					leftPosition: rect.left,
+					viewWidth: this.element.getSize( 'width' ),
+					windowWidth: windowRect.width
+				} );
 
 			this.element.setStyles( {
-				left: rect.left + 'px',
+				left: left + 'px',
 				top: top + 'px'
 			} );
+
+			function getVerticalPosition( options ) {
+				var editorViewportRect = options.editorViewportRect,
+					caretRect = options.caretRect,
+					viewHeight = options.viewHeight,
+					scrollPositionY = options.scrollPositionY,
+					windowHeight = options.windowHeight;
+
+				// If the caret position is below the view - keep it at the bottom edge.
+				// +---------------------------------------------+
+				// |       editor viewport                       |
+				// |                                             |
+				// |     +--------------+                        |
+				// |     |              |                        |
+				// |     |     view     |                        |
+				// |     |              |                        |
+				// +-----+==============+------------------------+
+				// |                                             |
+				// |     █ - caret position                      |
+				// |                                             |
+				// +---------------------------------------------+
+				if ( editorViewportRect.bottom < caretRect.bottom ) {
+					return Math.min( caretRect.top, editorViewportRect.bottom ) - viewHeight;
+				}
+
+				// If the view doesn't fit below the caret position and fits above, set it there.
+				// This means that the position below the caret is preferred.
+				// +---------------------------------------------+
+				// |                                             |
+				// |       editor viewport                       |
+				// |     +--------------+                        |
+				// |     |              |                        |
+				// |     |     view     |                        |
+				// |     |              |                        |
+				// |     +--------------+                        |
+				// |     █ - caret position                      |
+				// |                                             |
+				// |                                             |
+				// +---------------------------------------------+
+				// How much space is there for the view above and below the specified rect.
+				var spaceAbove = caretRect.top - editorViewportRect.top,
+					spaceBelow = editorViewportRect.bottom - caretRect.bottom,
+					viewExceedsTopViewport = ( caretRect.top - viewHeight ) < scrollPositionY;
+
+				if ( viewHeight > spaceBelow && viewHeight < spaceAbove && !viewExceedsTopViewport ) {
+					return caretRect.top - viewHeight;
+				}
+
+				// If the caret position is above the view - keep it at the top edge.
+				// +---------------------------------------------+
+				// |                                             |
+				// |     █ - caret position                      |
+				// |                                             |
+				// +-----+==============+------------------------+
+				// |     |              |                        |
+				// |     |     view     |                        |
+				// |     |              |                        |
+				// |     +--------------+                        |
+				// |                                             |
+				// |       editor viewport                       |
+				// +---------------------------------------------+
+				if ( editorViewportRect.top > caretRect.top ) {
+					return Math.max( caretRect.bottom, editorViewportRect.top );
+				}
+
+				// (#3582)
+				// If the view goes beyond bottom window border - reverse view position, even if it fits editor viewport.
+				// +---------------------------------------------+
+				// |               editor viewport               |
+				// |                                             |
+				// |                                             |
+				// |                  +--------------+           |
+				// |                  |     view     |           |
+				// |                  +--------------+           |
+				// | caret position - █                          |
+				// |                                             |
+				// =============================================== - bottom window border
+				// |                                             |
+				// |                                             |
+				// +---------------------------------------------+
+				var viewExceedsBottomViewport = ( caretRect.bottom + viewHeight ) > ( windowHeight + scrollPositionY );
+
+				if ( !( viewHeight > spaceBelow && viewHeight < spaceAbove ) && viewExceedsBottomViewport ) {
+					return caretRect.top - viewHeight;
+				}
+
+				// As a default, keep the view inside the editor viewport.
+				// +---------------------------------------------+
+				// |       editor viewport                       |
+				// |                                             |
+				// |                                             |
+				// |                                             |
+				// |     █ - caret position                      |
+				// |     +--------------+                        |
+				// |     |     view     |                        |
+				// |     +--------------+                        |
+				// |                                             |
+				// |                                             |
+				// +---------------------------------------------+
+				return Math.min( editorViewportRect.bottom, caretRect.bottom );
+			}
+
+			function getHorizontalPosition( options ) {
+				var caretLeftPosition = options.leftPosition,
+					viewWidth = options.viewWidth,
+					windowWidth = options.windowWidth;
+
+				// (#3582)
+				// If the view goes beyond right window border - stick it to the edge of the available viewport.
+				// +---------------------------------------------+   ||
+				// |               editor viewport               |   ||
+				// |                                             |   ||
+				// |                                             |   ||
+				// |                         caret position - █  |   || - right window border
+				// |                                 +--------------+||
+				// |                                 |              |||
+				// |                                 |     view     |||
+				// |                                 |              |||
+				// |                                 +--------------+||
+				// |                                             |   ||
+				// +---------------------------------------------+   ||
+				if ( caretLeftPosition + viewWidth > windowWidth ) {
+					return windowWidth - viewWidth;
+				}
+
+				// Otherwise inherit the horizontal position from caret.
+				return caretLeftPosition;
+			}
+
+			// Bounding rect where the view should fit (visible editor viewport).
+			function getEditorViewportRect( editor ) {
+				var editable = editor.editable();
+
+				// iOS classic editor has different viewport element (#1910).
+				if ( CKEDITOR.env.iOS && !editable.isInline() ) {
+					return iOSViewportElement( editor ).getClientRect( true );
+				} else {
+					return editable.isInline() ? editable.getClientRect( true ) : editor.window.getFrame().getClientRect( true );
+				}
+			}
 		},
 
 		/**
@@ -1355,6 +1535,21 @@
 		}, {} );
 	}
 
+	function removeLeadingSpace( editor ) {
+		var selection = editor.getSelection(),
+			nextNode = selection.getRanges()[ 0 ].getNextNode( function( node ) {
+				return Boolean( node.type == CKEDITOR.NODE_TEXT && node.getText() );
+			} );
+
+		if ( nextNode && nextNode.getText().match( /^\s+/ ) ) {
+			var range = editor.createRange();
+
+			range.setStart( nextNode, 0 );
+			range.setEnd( nextNode, 1 );
+			range.deleteContents();
+		}
+	}
+
 	/**
 	 * Abstract class describing the definition of the [Autocomplete](https://ckeditor.com/cke4/addon/autocomplete) plugin configuration.
 	 *
@@ -1462,6 +1657,12 @@
 	/**
 	 * @inheritdoc CKEDITOR.plugins.autocomplete#outputTemplate
 	 * @property {String} [outputTemplate]
+	 */
+
+	/**
+	 * @inheritdoc CKEDITOR.plugins.autocomplete#followingSpace
+	 * @since 4.20.0
+	 * @property {Boolean} [followingSpace]
 	 */
 
 	/**
