@@ -167,10 +167,8 @@
 					var nodeName = currentNode.getName();
 
 					// Non-editable block was found - return it and move to processing
-					// its nested editables if they exist.					
-					// [SE-50798] Patched the iterator to handle all `contenteditable=false` elements. 
-					//            Ignoring inline non-editable elements can potentially lead to an infinite loop
-					if ( /* CKEDITOR.dtd.$block[ nodeName ] && */ currentNode.getAttribute( 'contenteditable' ) == 'false' ) {
+					// its nested editables if they exist.
+					if ( CKEDITOR.dtd.$block[ nodeName ] && currentNode.getAttribute( 'contenteditable' ) == 'false' ) {
 						block = currentNode;
 
 						// Setup iterator for first of nested editables.
