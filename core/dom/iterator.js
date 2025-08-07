@@ -168,11 +168,7 @@
 
 					// Non-editable block was found - return it and move to processing
 					// its nested editables if they exist.
-					// [SE-50798] Patched the iterator to handle all `contenteditable=false` elements.
-					//            Ignoring inline non-editable elements can potentially lead to an infinite loop
-					if ( ( CKEDITOR.dtd.$block[ nodeName ] || hasNestedElements( currentNode ) ) &&
-						 currentNode.getAttribute( 'contenteditable' ) == 'false' )
-					{
+					if ( CKEDITOR.dtd.$block[ nodeName ] && currentNode.getAttribute( 'contenteditable' ) == 'false' ) {
 						block = currentNode;
 
 						// Setup iterator for first of nested editables.
@@ -393,28 +389,6 @@
 			return next;
 		}
 	};
-
-	/**
-	 * @param {CKEDITOR.dom.element} element
-	 * @returns {boolean} whether an element has nested non-text elements
-	 */
-	function hasNestedElements(element) {
-		if (!(element instanceof CKEDITOR.dom.element)) {
-			return false;
-		}
-		var children = element.getChildren();
-		if (!children) {
-			return false;
-		}
-		var count = children.count();
-		for (var i = 0; i < count; i++) {
-			var child = children.getItem(i);
-			if (child instanceof CKEDITOR.dom.element) {
-				return true;
-			}
-		}
-		return false;
-	}
 
 	// @context CKEDITOR.dom.iterator
 	// @returns Collapsed range which will be reused when during furter processing.
